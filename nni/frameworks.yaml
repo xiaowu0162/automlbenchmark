@@ -1,0 +1,11 @@
+---
+
+NNI:
+  module: extensions.NNI
+  version: '2.2'
+  project: https://github.com/microsoft/nni
+  params:
+    # tuner type in ['tpe', 'random_search', 'anneal', 'evolution']
+    tuner_type: 'anneal'
+    # arch_type in ['random forest']
+    arch_type: 'random forest'
