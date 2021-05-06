@@ -30,10 +30,9 @@ def run_random_forest(dataset, config, tuner, log):
 
     tuner.update_search_space(SEARCH_SPACE)
     start_time = time.time()
-    param_idx = 0
     while True:
         try:
-            cur_params = tuner.generate_parameters(param_idx)
+            param_idx, cur_params = tuner.generate_parameters()
             cur_model = estimator(random_state=config.seed, **cur_params)
             # Here score is the output of score() from the estimator
             cur_score = cross_val_score(cur_model, X_train, y_train)
@@ -43,13 +42,16 @@ def run_random_forest(dataset, config, tuner, log):
                 
             log.info("Trial {}: \n{}\nScore: {}\n".format(param_idx, cur_params, cur_score))
             tuner.receive_trial_result(param_idx, cur_params, cur_score)
-            param_idx += 1
+
             current_time = time.time()
             elapsed_time = current_time - start_time
             if elapsed_time > config.max_runtime_seconds:
                 break
         except:
-            break
+            pass
+
+    # This line is required to fully terminate some advisors
+    tuner.handle_terminate()
         
     log.info("Tuning done, the best parameters are:\n{}\n".format(best_params))
 

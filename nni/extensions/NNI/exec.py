@@ -1,6 +1,6 @@
 import logging
 
-from .get_tuner import *
+from .get_tuner import NNITuner
 from .run_experiment import *
 
 from amlb.benchmark import TaskConfig
@@ -13,9 +13,12 @@ log = logging.getLogger(__name__)
 
     
 def run(dataset: Dataset, config: TaskConfig):
-    tuner, description = get_tuner(config)
+    if 'tuner_type' not in config.framework_params:
+        raise RuntimeError('framework.yaml does not have a "tuner_type" field.')
+    
+    tuner = NNITuner(config.framework_params['tuner_type'])
     log.info("Tuning {} with NNI {} with a maximum time of {}s\n"
-             .format(config.framework_params['arch_type'], description, config.max_runtime_seconds))
+             .format(config.framework_params['arch_type'], tuner.description, config.max_runtime_seconds))
 
     probabilities, predictions, train_timer, y_test = run_experiment(dataset, config, tuner, log)
     
