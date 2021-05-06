@@ -1,7 +1,15 @@
-From the automlbenchmark app, you can now directly run additional frameworks (here various versions of H2O-3) and benchmarks (here `h2obench`):
+NNI Custom benchmarks:
+
+This folder contains a customized framework with several NNI Hyperparameter Tuners, along with testing benchmarks.
+
+**To experiment with an existing tuner:**
+
+1. Select tuner type and architecture type in frameworks.yaml.
+2. Find or define a benchmark in the "benchmarks" folder with name <benchmark>.yaml. 
+3. Go to the project root folder and run the following command.
+
 ```bash
-python runbenchmark.py randomforest filedatasets -u examples/custom
-python runbenchmark.py gradientboosting myvalidation 30m4c2f -t miniboone -u examples/custom
+python runbenchmark.py NNI <benchmark> -u nni
 ```
 
 **Note:**

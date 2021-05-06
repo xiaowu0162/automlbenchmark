@@ -16,6 +16,7 @@ def run(dataset: Dataset, config: TaskConfig):
     tuner, description = get_tuner(config)
     log.info("Tuning {} with NNI {} with a maximum time of {}s\n"
              .format(config.framework_params['arch_type'], description, config.max_runtime_seconds))
+
     probabilities, predictions, train_timer, y_test = run_experiment(dataset, config, tuner, log)
     
     save_predictions_to_file(dataset=dataset,
@@ -26,5 +27,5 @@ def run(dataset: Dataset, config: TaskConfig):
 
     return dict(
         models_count=1,
-        training_duration=training.duration
+        training_duration=train_timer.duration
     )
