@@ -1,4 +1,3 @@
-#from .run_random_forest import *
 from .architectures.run_random_forest import *
 
 

@@ -1,3 +1,5 @@
+from amlb.benchmark import TaskConfig
+
 import nni
 
 from nni.utils import MetricType 
@@ -8,37 +10,47 @@ from nni.algorithms.hpo.smac_tuner.smac_tuner import SMACTuner
 from nni.algorithms.hpo.gp_tuner.gp_tuner import GPTuner
 from nni.algorithms.hpo.metis_tuner.metis_tuner import MetisTuner
 from nni.algorithms.hpo.hyperband_advisor import Hyperband
+from nni.algorithms.hpo.bohb_advisor.bohb_advisor import BOHB
+from nni.algorithms.hpo.bohb_advisor.config_generator import CG_BOHB
 
 
-def get_tuner(tuner_alias):
+def get_tuner(config: TaskConfig):
     # Users may add their customized Tuners here 
-    if tuner_alias == 'tpe':
+    if config.framework_params['tuner_type'] == 'tpe':
         return HyperoptTuner('tpe'), 'TPE Tuner'
 
-    elif tuner_alias == 'random_search':
+    elif config.framework_params['tuner_type'] == 'random_search':
         return HyperoptTuner('random_search'), 'Random Search Tuner'
 
-    elif tuner_alias == 'anneal':
+    elif config.framework_params['tuner_type'] == 'anneal':
         return HyperoptTuner('anneal'), 'Annealing Tuner'
     
-    elif tuner_alias == 'evolution':
+    elif config.framework_params['tuner_type'] == 'evolution':
         return EvolutionTuner(), 'Evolution Tuner'
 
-    elif tuner_alias == 'smac':
+    elif config.framework_params['tuner_type'] == 'smac':
         return SMACTuner(), 'SMAC Tuner'
 
-    elif tuner_alias == 'gp':
+    elif config.framework_params['tuner_type'] == 'gp':
         return GPTuner(), 'GP Tuner'
 
-    elif tuner_alias == 'metis':
+    elif config.framework_params['tuner_type'] == 'metis':
         return MetisTuner(), 'Metis Tuner'
 
-    elif tuner_alias == 'hyperband':
-        return Hyperband(), 'Hyperband Advisor'
+    elif config.framework_params['tuner_type'] == 'hyperband':
+        if 'max_resource' in config.framework_params:
+            tuner = Hyperband(R=config.framework_params['max_resource'])
+        else:
+            tuner = Hyperband()
+        return tuner, 'Hyperband Advisor'
     
-    # TO-DO: BOHB
-    
-    # Note: BatchTuner and GridSearchTuner are not included
+    elif config.framework_params['tuner_type'] == 'bohb':
+        if 'max_resource' in config.framework_params:
+            tuner = BOHB(max_budget=config.framework_params['max_resource'])     
+        else:
+            tuner = BOHB(max_budget=60)  
+        return tuner, 'BOHB Advisor'
+        
     else:
         raise RuntimeError('The requested tuner type in framework.yaml is unavailable.')
 
@@ -48,10 +60,12 @@ class NNITuner:
     A specialized wrapper for the automlbenchmark framework.
     Abstracts the different behaviors of tuners and advisors into a tuner API. 
     '''
-    def __init__(self, tuner_alias):
-        self.core, self.description = get_tuner(tuner_alias)
+    def __init__(self, config: TaskConfig):
+        self.config = config
+        self.core, self.description = get_tuner(config)
 
-        self.core_type = None      # 'tuner' or 'advisor'   
+        # 'tuner' or 'advisor'
+        self.core_type = None      
         if isinstance(self.core, nni.tuner.Tuner):
             self.core_type = 'tuner'
         elif isinstance(self.core, nni.runtime.msg_dispatcher_base.MsgDispatcherBase):
@@ -69,12 +83,21 @@ class NNITuner:
         
     def update_search_space(self, search_space):
         if self.core_type == 'tuner':
-            return self.core.update_search_space(search_space)
+            self.core.update_search_space(search_space)
             
         elif self.core_type == 'advisor':
-            #return self.core.handle_update_search_space(search_space)
-            return self.core.handle_initialize(search_space)
-
+            self.core.handle_update_search_space(search_space)
+            # special initializations for BOHB Advisor
+            if isinstance(self.core, BOHB):
+                self.core.cg = CG_BOHB(configspace=self.core.search_space,
+                                        min_points_in_model=self.core.min_points_in_model,
+                                        top_n_percent=self.core.top_n_percent,
+                                        num_samples=self.core.num_samples,
+                                        random_fraction=self.core.random_fraction,
+                                        bandwidth_factor=self.core.bandwidth_factor,
+                                        min_bandwidth=self.core.min_bandwidth)
+                self.core.generate_new_bracket()
+                
         
     def generate_parameters(self):
         self.cur_param_id += 1

@@ -48,7 +48,7 @@ def run_random_forest(dataset, config, tuner, log):
             if elapsed_time > config.max_runtime_seconds:
                 break
         except:
-            pass
+            break
 
     # This line is required to fully terminate some advisors
     tuner.handle_terminate()
