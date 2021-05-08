@@ -33,6 +33,8 @@ def run_random_forest(dataset, config, tuner, log):
     while True:
         try:
             param_idx, cur_params = tuner.generate_parameters()
+            if 'TRIAL_BUDGET' in cur_params:
+                cur_params.pop('TRIAL_BUDGET')
             cur_model = estimator(random_state=config.seed, **cur_params)
             # Here score is the output of score() from the estimator
             cur_score = cross_val_score(cur_model, X_train, y_train)

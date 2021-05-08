@@ -108,7 +108,7 @@ class NNITuner:
         elif self.core_type == 'advisor':
             self.cur_param = self.core._get_one_trial_job()
             hyperparams = self.cur_param['parameters'].copy()
-            hyperparams.pop('TRIAL_BUDGET')
+            #hyperparams.pop('TRIAL_BUDGET')
             return self.cur_param['parameter_id'], hyperparams
 
         
