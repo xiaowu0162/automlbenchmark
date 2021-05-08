@@ -1,7 +1,12 @@
 import pandas as pd
+import sys
 
 
-result_file = '/home/v-diwu4/workspace/automlbenchmark-stable-dev/results/results_demo.csv'
+if len(sys.argv) != 2:
+    print("Usage: python parse_result_csv.py <result.csv file>")
+    exit(0)
+
+result_file = sys.argv[1]
 result = pd.read_csv(result_file)
 
 task_ids = result['id'].unique()
